@@ -21,6 +21,9 @@ class Post extends BaseModel
         'post_id',
         'sequence',
         'content',
+        'file',
+        'original_name',
+        'file_path'
     ];
 
     public function __construct(array $attributes = [])

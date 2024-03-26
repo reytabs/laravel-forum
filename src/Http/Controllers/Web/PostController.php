@@ -52,11 +52,24 @@ class PostController extends BaseController
 
     public function store(CreatePost $request): RedirectResponse
     {
+        \Log::info(print_r($request->all(), true));
+        
         $thread = $request->route('thread');
 
         $this->authorize('reply', $thread);
 
         $post = $request->fulfill();
+
+        // Store the file in storage\app\public folder
+        $file = $request->file('file_upload');
+        $fileName = $file->getClientOriginalName();
+        $filePath = $file->store('uploads', 'forum');
+
+        // Store file information in the database
+        $post->file = $fileName;
+        $post->original_name = $file->getClientOriginalName();
+        $post->file_path = $filePath;
+        $post->save();
 
         Forum::alert('success', 'general.reply_added');
 
