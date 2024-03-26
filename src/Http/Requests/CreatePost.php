@@ -18,7 +18,7 @@ class CreatePost extends FormRequest implements FulfillableRequest
     {
         return [
             'content' => ['required', 'string', 'min:'.config('forum.general.validation.content_min')],
-            'file_upload' => ['mimes:pdf,jpg,png|max:2048']
+            'file' => ['mimes:jpg,jpeg,bmp,png,doc,docx,csv,rtf,xlsx,xls,txt,pdf,zip|max:10240']
         ];
     }
 
