@@ -13,8 +13,12 @@ use TeamTeaTime\Forum\Http\Requests\CreateCategory;
 use TeamTeaTime\Forum\Http\Requests\DeleteCategory;
 use TeamTeaTime\Forum\Http\Requests\UpdateCategory;
 use TeamTeaTime\Forum\Models\Category;
+use TeamTeaTime\Forum\Models\Post;
+use TeamTeaTime\Forum\Models\Thread;
+use TeamTeaTime\Forum\Models\Notification;
 use TeamTeaTime\Forum\Support\CategoryPrivacy;
 use TeamTeaTime\Forum\Support\Web\Forum;
+use Auth;
 
 class CategoryController extends BaseController
 {
@@ -87,8 +91,48 @@ class CategoryController extends BaseController
                 }
             }
         }
+            
+            $forumPostCount = 0;
+            $forumPostCountArray = [];
+            $userId = Auth::user()->B040Id;
+            
+            $forumCategory = Category::where('title',$category->title)->first();
+            $forumThread = Thread::with(['posts'=>function($q) use ($userId){
+                $q->where('author_id','!=',$userId);
+            }])->where('category_id',$forumCategory->id)->get();
+           ;
+            foreach($forumThread as $val){
+               foreach($val->posts as $post){
 
-        return ViewFactory::make('forum.category.show', compact('privateAncestor', 'categories', 'category', 'threads', 'selectableThreadIds'));
+                $forumNotification = Notification::where('post_id',$post->id)
+                    ->where('category_id',$category->id)
+                    ->where('user_id',$userId)
+                    ->first();
+                if(empty($forumNotification)){
+                    Notification::create([
+                        'category_id' => $category->id,
+                        'user_id' => $userId,
+                        'post_id' => $post->id,
+                        'is_read' => 1
+                    ]);
+                }else{
+                    Notification::where('post_id',$post->id)
+                    ->where('category_id',$category->id)
+                    ->where('user_id',$userId)
+                    ->update([
+                        'category_id' => $category->id,
+                        'user_id' => $userId,
+                        'post_id' => $post->id,
+                        'is_read' => 1
+                    ]);
+                }
+                $forumPostCountArray[] = $post;
+               }
+            }
+
+            $forumPostCount = count($forumPostCountArray);
+
+        return ViewFactory::make('forum.category.show', compact('privateAncestor', 'categories', 'category', 'threads', 'selectableThreadIds','forumPostCountArray'));
     }
 
     public function store(CreateCategory $request): RedirectResponse
