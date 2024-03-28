@@ -97,37 +97,39 @@ class CategoryController extends BaseController
             $userId = Auth::user()->B040Id;
             
             $forumCategory = Category::where('title',$category->title)->first();
-            $forumThread = Thread::with(['posts'=>function($q) use ($userId){
-                $q->where('author_id','!=',$userId);
-            }])->where('category_id',$forumCategory->id)->get();
-           ;
-            foreach($forumThread as $val){
-               foreach($val->posts as $post){
-
-                $forumNotification = Notification::where('post_id',$post->id)
-                    ->where('category_id',$category->id)
-                    ->where('user_id',$userId)
-                    ->first();
-                if(empty($forumNotification)){
-                    Notification::create([
-                        'category_id' => $category->id,
-                        'user_id' => $userId,
-                        'post_id' => $post->id,
-                        'is_read' => 1
-                    ]);
-                }else{
-                    Notification::where('post_id',$post->id)
-                    ->where('category_id',$category->id)
-                    ->where('user_id',$userId)
-                    ->update([
-                        'category_id' => $category->id,
-                        'user_id' => $userId,
-                        'post_id' => $post->id,
-                        'is_read' => 1
-                    ]);
+            if($forumCategory) {
+                $forumThread = Thread::with(['posts'=>function($q) use ($userId){
+                    $q->where('author_id','!=',$userId);
+                }])->where('category_id',$forumCategory->id)->get();
+                
+                foreach($forumThread as $val){
+                   foreach($val->posts as $post){
+    
+                    $forumNotification = Notification::where('post_id',$post->id)
+                        ->where('category_id',$category->id)
+                        ->where('user_id',$userId)
+                        ->first();
+                    if(empty($forumNotification)){
+                        Notification::create([
+                            'category_id' => $category->id,
+                            'user_id' => $userId,
+                            'post_id' => $post->id,
+                            'is_read' => 1
+                        ]);
+                    }else{
+                        Notification::where('post_id',$post->id)
+                        ->where('category_id',$category->id)
+                        ->where('user_id',$userId)
+                        ->update([
+                            'category_id' => $category->id,
+                            'user_id' => $userId,
+                            'post_id' => $post->id,
+                            'is_read' => 1
+                        ]);
+                    }
+                    $forumPostCountArray[] = $post;
+                   }
                 }
-                $forumPostCountArray[] = $post;
-               }
             }
 
             $forumPostCount = count($forumPostCountArray);
